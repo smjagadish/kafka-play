@@ -19,7 +19,7 @@ import java.util.Map;
 public class KafkaConfiguration {
 
     @Autowired
-    private KafkaProperties kafkaProperties;
+    public KafkaProperties kafkaProperties;
 
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
@@ -45,6 +45,7 @@ public class KafkaConfiguration {
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
         return new KafkaTemplate<String , Object>(producerFactory());
+
     }
 
     @Bean
