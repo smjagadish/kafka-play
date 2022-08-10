@@ -27,6 +27,7 @@ public class KafkaConfiguration {
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        config.put(ProducerConfig.CLIENT_ID_CONFIG , "Objproducer");
         config.put(ProducerConfig.ACKS_CONFIG,"all");
         //config.put(ProducerConfig.ACKS_CONFIG , kafkaProperties.getProperties().get("spring.kafka.producer.acks"));
         return new DefaultKafkaProducerFactory<>(config);

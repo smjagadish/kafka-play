@@ -29,50 +29,46 @@ public class KafkademoApplication {
 
 		ApplicationContext ctx = SpringApplication.run(KafkademoApplication.class, args);
 		messageSender obj = ctx.getBean(messageSender.class);
-		obj.send("sample-topic4"," testvalue");
+		obj.send("sample-topic4", " testvalue");
 
 
 	}
+
 	@Component
-	private class messageSender{
+	private class messageSender {
 
 
 		@Autowired
-		KafkaTemplate <String,Object> kt;
+		KafkaTemplate<String, Object> kt;
 		@Autowired
-		KafkaTemplate <String,String> ktString;
+		KafkaTemplate<String, String> ktString;
 		@Autowired
-		DefaultKafkaProducerFactory<String,Object> pf;
+		DefaultKafkaProducerFactory<String, Object> pf;
 
-		private void send(String topic , String val)
-		{
+		private void send(String topic, String val) {
 			String serializer = kt.getProducerFactory().getConfigurationProperties().get("bootstrap.servers").toString();
 			System.out.println(serializer);
 			System.out.println(ktString.getProducerFactory().getConfigurationProperties().get("client.id").toString());
 			System.out.println("test out");
 			kt.setProducerListener(new ProducerListener<String, Object>() {
-				void onSuccess(ProducerRecord<String,Object> data)
-				{
 
-				}
-				void onError(ProducerRecord<String,Object> data)
+				void onSuccess(String topic, Integer partition, String key, Object value,
+							   RecordMetadata recordMetadata)
 				{
-					System.out.println("errored out");
+					System.out.println("sucessful listerner call out");
 				}
 			});
 			kt.execute(new KafkaOperations.ProducerCallback<String, Object, Object>() {
 
 				@Override
 				public Object doInKafka(Producer<String, Object> producer) {
-					Future<RecordMetadata> res=null;
+					Future<RecordMetadata> res = null;
 					try {
 						System.out.println("test send out");
-						for(int i=0;i<10;i++)
-					 	producer.send(new ProducerRecord<>(topic, val));
+						for (int i = 0; i < 10; i++)
+							producer.send(new ProducerRecord<>(topic, val));
 
-					}
-					catch(Exception e)
-					{
+					} catch (Exception e) {
 						System.out.println(e);
 						e.printStackTrace();
 					}
@@ -80,13 +76,12 @@ public class KafkademoApplication {
 					return null;
 				}
 			});
-            //pf.destroy();
-			//pf.setProducerPerThread(true);
-            pf.updateConfigs(Collections.singletonMap(ProducerConfig.CLIENT_ID_CONFIG,"changedproducer")); // producer config can be updated on the fly . existing  producers need a reset though
+
+			pf.setProducerPerThread(true);
+			pf.updateConfigs(Collections.singletonMap(ProducerConfig.CLIENT_ID_CONFIG, "changedproducer")); // producer config can be updated on the fly . existing  producers need a reset though
 			pf.reset(); // closing producer to reflect config change
 
-
-			ListenableFuture<SendResult<String, Object>> future = kt.send(topic,  val);
+			ListenableFuture<SendResult<String, Object>> future = kt.send(topic, val);
 
 			future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
 				@Override
@@ -96,12 +91,15 @@ public class KafkademoApplication {
 
 				@Override
 				public void onSuccess(SendResult<String, Object> result) {
-                    System.out.println("wrote date with" +" "+ "value:"+" "+result.getProducerRecord().value().toString()+ " "+ " to the topic:" + " " +result.getRecordMetadata().topic());
+					System.out.println("wrote date with" + " " + "value:" + " " + result.getProducerRecord().value().toString() + " " + " to the topic:" + " " + result.getRecordMetadata().topic());
 				}
 			});
-			}
+
+
+
 		}
 	}
+}
 
 
 
