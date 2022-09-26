@@ -3,9 +3,12 @@ package com.example.kafkademo;
 import com.example.kafkaconfig.KafkaConfiguration;
 import org.apache.kafka.clients.producer.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -16,12 +19,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 @SpringBootApplication
+@ComponentScan("com.example.kafkaconfig")
 public class KafkademoApplication {
 
 
@@ -39,13 +44,27 @@ public class KafkademoApplication {
 
 
 		@Autowired
-		KafkaTemplate<String, Object> kt;
+		KafkaTemplate<String , Object> kt;
 		@Autowired
 		KafkaTemplate<String, String> ktString;
 		@Autowired
+		@Qualifier("factory")
 		DefaultKafkaProducerFactory<String, Object> pf;
+		@Autowired
+		KafkaTemplate<String , byte[]> barray;
 
 		private void send(String topic, String val) {
+			pf.addListener(new ProducerFactory.Listener<String, Object>() {
+				@Override
+				public void producerAdded(String id, Producer<String, Object> producer) {
+					System.out.println("producer added");
+				}
+
+				@Override
+				public void producerRemoved(String id, Producer<String, Object> producer) {
+					System.out.println("producer removed");
+				}
+			});
 			String serializer = kt.getProducerFactory().getConfigurationProperties().get("bootstrap.servers").toString();
 			System.out.println(serializer);
 			System.out.println(ktString.getProducerFactory().getConfigurationProperties().get("client.id").toString());
@@ -68,6 +87,7 @@ public class KafkademoApplication {
 						for (int i = 0; i < 10; i++)
 							producer.send(new ProducerRecord<>(topic, val));
 
+
 					} catch (Exception e) {
 						System.out.println(e);
 						e.printStackTrace();
@@ -76,7 +96,9 @@ public class KafkademoApplication {
 					return null;
 				}
 			});
+//barray.send(topic,val.getBytes(StandardCharsets.UTF_8));
 
+			barray.send(topic,val.getBytes());
 			pf.setProducerPerThread(true);
 			pf.updateConfigs(Collections.singletonMap(ProducerConfig.CLIENT_ID_CONFIG, "changedproducer")); // producer config can be updated on the fly . existing  producers need a reset though
 			pf.reset(); // closing producer to reflect config change
@@ -95,7 +117,7 @@ public class KafkademoApplication {
 				}
 			});
 
-
+		
 
 		}
 	}
