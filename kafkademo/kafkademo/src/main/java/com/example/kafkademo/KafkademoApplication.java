@@ -9,10 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaOperations;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.core.*;
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
@@ -44,7 +41,7 @@ public class KafkademoApplication {
 
 
 		@Autowired
-		KafkaTemplate<String , Object> kt;
+		KafkaTemplate<Object , Object> kt;
 		@Autowired
 		KafkaTemplate<String, String> ktString;
 		@Autowired
@@ -52,12 +49,14 @@ public class KafkademoApplication {
 		DefaultKafkaProducerFactory<String, Object> pf;
 		@Autowired
 		KafkaTemplate<String , byte[]> barray;
+		@Autowired
+		RoutingKafkaTemplate ktroute;
 
 		private void send(String topic, String val) {
 			pf.addListener(new ProducerFactory.Listener<String, Object>() {
 				@Override
 				public void producerAdded(String id, Producer<String, Object> producer) {
-					System.out.println("producer added");
+					System.out.println("producer added with id" +id);
 				}
 
 				@Override
@@ -69,7 +68,7 @@ public class KafkademoApplication {
 			System.out.println(serializer);
 			System.out.println(ktString.getProducerFactory().getConfigurationProperties().get("client.id").toString());
 			System.out.println("test out");
-			kt.setProducerListener(new ProducerListener<String, Object>() {
+			kt.setProducerListener(new ProducerListener<Object, Object>() {
 
 				void onSuccess(String topic, Integer partition, String key, Object value,
 							   RecordMetadata recordMetadata)
@@ -77,10 +76,10 @@ public class KafkademoApplication {
 					System.out.println("sucessful listerner call out");
 				}
 			});
-			kt.execute(new KafkaOperations.ProducerCallback<String, Object, Object>() {
+			kt.execute(new KafkaOperations.ProducerCallback<Object, Object, Object>() {
 
 				@Override
-				public Object doInKafka(Producer<String, Object> producer) {
+				public Object doInKafka(Producer<Object, Object> producer) {
 					Future<RecordMetadata> res = null;
 					try {
 						System.out.println("test send out");
@@ -98,26 +97,28 @@ public class KafkademoApplication {
 			});
 //barray.send(topic,val.getBytes(StandardCharsets.UTF_8));
 
-			barray.send(topic,val.getBytes());
+			barray.send(topic,"dummy".getBytes());
 			pf.setProducerPerThread(true);
 			pf.updateConfigs(Collections.singletonMap(ProducerConfig.CLIENT_ID_CONFIG, "changedproducer")); // producer config can be updated on the fly . existing  producers need a reset though
 			pf.reset(); // closing producer to reflect config change
 
-			ListenableFuture<SendResult<String, Object>> future = kt.send(topic, val);
+			ListenableFuture<SendResult<Object, Object>> future = kt.send(topic, val);
 
-			future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
+			future.addCallback(new ListenableFutureCallback<SendResult<Object, Object>>() {
 				@Override
 				public void onFailure(Throwable ex) {
 
 				}
 
 				@Override
-				public void onSuccess(SendResult<String, Object> result) {
+				public void onSuccess(SendResult<Object, Object> result) {
 					System.out.println("wrote date with" + " " + "value:" + " " + result.getProducerRecord().value().toString() + " " + " to the topic:" + " " + result.getRecordMetadata().topic());
 				}
 			});
 
-		
+		ktroute.send("dummy","1234");
+		ktroute.send(topic,"xxxval");
+		ktroute.send("dummy","hhh");
 
 		}
 	}

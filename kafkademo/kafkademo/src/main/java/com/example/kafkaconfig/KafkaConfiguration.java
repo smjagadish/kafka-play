@@ -13,11 +13,14 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.core.RoutingKafkaTemplate;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @Configuration
 public class KafkaConfiguration {
@@ -26,7 +29,18 @@ public class KafkaConfiguration {
     public KafkaProperties kafkaProperties;
 
     @Bean
-    public ProducerFactory<String, Object> producerFactory() {
+    public ProducerFactory<Object, Object> producerFactory() {
+        /*Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        config.put(ProducerConfig.CLIENT_ID_CONFIG , "Objproducer");
+        config.put(ProducerConfig.ACKS_CONFIG,"all");
+        //config.put(ProducerConfig.ACKS_CONFIG , kafkaProperties.getProperties().get("spring.kafka.producer.acks"));*/
+        return new DefaultKafkaProducerFactory<>(config_src0());
+    }
+    @Bean
+    public ProducerFactory<Object, Object> duplicateproducerFactory() {
         /*Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -69,11 +83,15 @@ public Map<String ,Object> config_src1()
     }
 
     @Bean(name="kt")
-    public KafkaTemplate<String, Object> kafkaTemplate() {
-        return new KafkaTemplate<String , Object>(producerFactory());
+    public KafkaTemplate<Object, Object> kafkaTemplate() {
+        return new KafkaTemplate<Object , Object>(producerFactory());
 
     }
+    @Bean(name="duplicatekt")
+    public KafkaTemplate<Object, Object> duplicatekafkaTemplate() {
+        return new KafkaTemplate<Object , Object>(duplicateproducerFactory());
 
+    }
     @Bean(name="ktstring")
     public KafkaTemplate<String, String> stringTemplate() {
         return new KafkaTemplate<String, String>(stringProducerFactory());
@@ -82,6 +100,14 @@ public Map<String ,Object> config_src1()
     @Qualifier("factory")
     public KafkaTemplate<String, byte[]> stringTemplate2(ProducerFactory<String, byte[]> pf) {
         return new KafkaTemplate<String, byte[]>(pf, Collections.singletonMap(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class));
+    }
+    @Bean
+    public RoutingKafkaTemplate routingTemplate()
+    {
+        Map<Pattern,ProducerFactory<Object,Object>> rmap= new LinkedHashMap<>();
+        rmap.put(Pattern.compile("sample-topic4"),producerFactory());
+        rmap.put(Pattern.compile("dummy"),duplicateproducerFactory());
+        return new RoutingKafkaTemplate(rmap);
     }
 
     @Bean
