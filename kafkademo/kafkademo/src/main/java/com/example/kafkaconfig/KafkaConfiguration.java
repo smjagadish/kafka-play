@@ -1,5 +1,6 @@
 package com.example.kafkaconfig;
 
+import com.example.pojo.userInfo;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -37,6 +38,7 @@ public class KafkaConfiguration {
         config.put(ProducerConfig.CLIENT_ID_CONFIG , "Objproducer");
         config.put(ProducerConfig.ACKS_CONFIG,"all");
         //config.put(ProducerConfig.ACKS_CONFIG , kafkaProperties.getProperties().get("spring.kafka.producer.acks"));*/
+
         return new DefaultKafkaProducerFactory<>(config_src0());
     }
     @Bean
@@ -80,6 +82,27 @@ public Map<String ,Object> config_src1()
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.CLIENT_ID_CONFIG , "stringproducer");
         return config;
+    }
+
+    @Bean
+    public Map<String,Object> config_src2()
+    {
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+      //  config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        config.put(ProducerConfig.CLIENT_ID_CONFIG , "jsonproducer");
+        return config;
+    }
+
+    @Bean(name="json")
+    public KafkaTemplate<String, userInfo> pojoKafkaTemplate(){
+return new KafkaTemplate<String,userInfo>(pojoProducerFactory());
+    }
+
+    @Bean
+    public ProducerFactory<String, userInfo> pojoProducerFactory() {
+        return new DefaultKafkaProducerFactory<>(config_src2(),null,()-> new JsonSerializer());
     }
 
     @Bean(name="kt")

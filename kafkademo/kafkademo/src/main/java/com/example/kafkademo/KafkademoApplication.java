@@ -1,6 +1,7 @@
 package com.example.kafkademo;
 
 import com.example.kafkaconfig.KafkaConfiguration;
+import com.example.pojo.userInfo;
 import org.apache.kafka.clients.producer.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -51,6 +52,8 @@ public class KafkademoApplication {
 		KafkaTemplate<String , byte[]> barray;
 		@Autowired
 		RoutingKafkaTemplate ktroute;
+		@Autowired
+		KafkaTemplate<String, userInfo> ktpojo;
 
 		private void send(String topic, String val) {
 			pf.addListener(new ProducerFactory.Listener<String, Object>() {
@@ -119,6 +122,9 @@ public class KafkademoApplication {
 		ktroute.send("dummy","1234");
 		ktroute.send(topic,"xxxval");
 		ktroute.send("dummy","hhh");
+		//changes for json serializer
+			userInfo uinfo = userInfo.builder().dept("IT").name("text user").id(145).build();
+			ktpojo.send(topic,uinfo);
 
 		}
 	}
