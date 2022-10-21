@@ -2,6 +2,7 @@ package com.example.kafkademo;
 
 import com.example.kafkaconfig.KafkaConfiguration;
 import com.example.pojo.userInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -79,7 +80,7 @@ public class KafkademoApplication {
 					System.out.println("sucessful listerner call out");
 				}
 			});
-			kt.execute(new KafkaOperations.ProducerCallback<Object, Object, Object>() {
+	/*		kt.execute(new KafkaOperations.ProducerCallback<Object, Object, Object>() {
 
 				@Override
 				public Object doInKafka(Producer<Object, Object> producer) {
@@ -97,15 +98,15 @@ public class KafkademoApplication {
 
 					return null;
 				}
-			});
+			}); */
 //barray.send(topic,val.getBytes(StandardCharsets.UTF_8));
 
-			barray.send(topic,"dummy".getBytes());
+		//	barray.send(topic,"textdata".getBytes());
 			pf.setProducerPerThread(true);
 			pf.updateConfigs(Collections.singletonMap(ProducerConfig.CLIENT_ID_CONFIG, "changedproducer")); // producer config can be updated on the fly . existing  producers need a reset though
 			pf.reset(); // closing producer to reflect config change
 
-			ListenableFuture<SendResult<Object, Object>> future = kt.send(topic, val);
+	/*		ListenableFuture<SendResult<Object, Object>> future = kt.send(topic, val);
 
 			future.addCallback(new ListenableFutureCallback<SendResult<Object, Object>>() {
 				@Override
@@ -118,12 +119,13 @@ public class KafkademoApplication {
 					System.out.println("wrote date with" + " " + "value:" + " " + result.getProducerRecord().value().toString() + " " + " to the topic:" + " " + result.getRecordMetadata().topic());
 				}
 			});
-
+*/
 		ktroute.send("dummy","1234");
-		ktroute.send(topic,"xxxval");
+	//	ktroute.send(topic,"xxxval");
 		ktroute.send("dummy","hhh");
 		//changes for json serializer
 			userInfo uinfo = userInfo.builder().dept("IT").name("text user").id(145).build();
+
 			ktpojo.send(topic,uinfo);
 
 		}

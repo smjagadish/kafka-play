@@ -4,6 +4,7 @@ import com.example.pojo.userInfo;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,11 +17,14 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.core.RoutingKafkaTemplate;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.kafka.support.serializer.ToStringSerializer;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 @Configuration
@@ -28,6 +32,14 @@ public class KafkaConfiguration {
 
     @Autowired
     public KafkaProperties kafkaProperties;
+
+    @Bean
+    public ToStringSerializer<Object> ser()
+    {
+        return new ToStringSerializer<Object>(){
+
+        };
+    }
 
     @Bean
     public ProducerFactory<Object, Object> producerFactory() {
@@ -39,7 +51,8 @@ public class KafkaConfiguration {
         config.put(ProducerConfig.ACKS_CONFIG,"all");
         //config.put(ProducerConfig.ACKS_CONFIG , kafkaProperties.getProperties().get("spring.kafka.producer.acks"));*/
 
-        return new DefaultKafkaProducerFactory<>(config_src0());
+        // example of spring kafka's take of stock string serializer
+        return new DefaultKafkaProducerFactory<>(config_src0(),null , ser());
     }
     @Bean
     public ProducerFactory<Object, Object> duplicateproducerFactory() {
@@ -50,7 +63,7 @@ public class KafkaConfiguration {
         config.put(ProducerConfig.CLIENT_ID_CONFIG , "Objproducer");
         config.put(ProducerConfig.ACKS_CONFIG,"all");
         //config.put(ProducerConfig.ACKS_CONFIG , kafkaProperties.getProperties().get("spring.kafka.producer.acks"));*/
-        return new DefaultKafkaProducerFactory<>(config_src0());
+        return new DefaultKafkaProducerFactory<>(config_src0(),null,ser());
     }
     @Bean(name="factory")
     @Primary
@@ -61,7 +74,12 @@ public class KafkaConfiguration {
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.CLIENT_ID_CONFIG , "stringproducer");*/
         //config.put(ProducerConfig.ACKS_CONFIG , kafkaProperties.getProperties().get("spring.kafka.producer.acks"));
-        return new DefaultKafkaProducerFactory<>(config_src1());
+        return new DefaultKafkaProducerFactory<>(config_src1(),null,new ToStringSerializer<String>(){
+            public String toString()
+            {
+                return "forced content change by serializer";
+            }
+        });
     }
 @Bean
 public Map<String ,Object> config_src1()
@@ -92,6 +110,9 @@ public Map<String ,Object> config_src1()
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
       //  config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         config.put(ProducerConfig.CLIENT_ID_CONFIG , "jsonproducer");
+        // disabling spring kafka json serializer type info
+        // this allows me to use diff pojo in cons and producer 
+        config.put(JsonSerializer.ADD_TYPE_INFO_HEADERS , "false");
         return config;
     }
 
