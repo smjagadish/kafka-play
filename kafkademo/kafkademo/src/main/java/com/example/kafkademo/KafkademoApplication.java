@@ -12,8 +12,11 @@ import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.kafka.core.*;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
@@ -44,6 +47,9 @@ public class KafkademoApplication {
 
 		@Autowired
 		KafkaTemplate<Object , Object> kt;
+		@Autowired
+		@Qualifier("duplicatekt")
+		KafkaTemplate<Object , Object> kt_dup;
 		@Autowired
 		KafkaTemplate<String, String> ktString;
 		@Autowired
@@ -123,11 +129,20 @@ public class KafkademoApplication {
 		ktroute.send("dummy","1234");
 	//	ktroute.send(topic,"xxxval");
 		ktroute.send("dummy","hhh");
+	// since ktroute kafka template packs a value type of object, the below instruction goes through
+	// lombok generated toString will give a meaningful representation instead of the default obj.tostring()
+		ktroute.send("dummy",userInfo.builder().dept("CS").name("dumb user").id(345).build());
 		//changes for json serializer
 			userInfo uinfo = userInfo.builder().dept("IT").name("text user").id(145).build();
-
+           System.out.println(uinfo.toString());
 			ktpojo.send(topic,uinfo);
 
+        // send using message object. use this to set custom headers so as to use delegating serializer as a check
+			Message<?> msg = MessageBuilder.withPayload(uinfo)
+					.setHeader("DelegatingSerializer.VALUE_SERIALIZATION_SELECTOR ","ser1")
+					.setHeader(KafkaHeaders.TOPIC,"dummy")
+					.build();
+             kt_dup.send(msg);
 		}
 	}
 }
