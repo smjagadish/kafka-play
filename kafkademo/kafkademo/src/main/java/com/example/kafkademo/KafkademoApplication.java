@@ -137,6 +137,11 @@ public class KafkademoApplication {
            System.out.println(uinfo.toString());
 			ktpojo.send(topic,uinfo);
 
+			//Jun20 , 2023
+        // injecting a poison pill on purpose
+			ktroute.send(topic,"junk data");
+	    // poison pill ends
+
         // send using message object. use this to set custom headers so as to use delegating serializer as a check
 			Message<?> msg = MessageBuilder.withPayload(uinfo)
 					.setHeader("DelegatingSerializer.VALUE_SERIALIZATION_SELECTOR ","ser1")
