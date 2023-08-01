@@ -33,9 +33,8 @@ public class KafkaConfiguration {
     public KafkaProperties kafkaProperties;
 
     @Bean
-    public ToStringSerializer<Object> ser()
-    {
-        return new ToStringSerializer<Object>(){
+    public ToStringSerializer<Object> ser() {
+        return new ToStringSerializer<Object>() {
 
         };
     }
@@ -43,7 +42,7 @@ public class KafkaConfiguration {
     @Bean
     public ProducerFactory<Object, Object> producerFactory() {
         // example of spring kafka's take of stock string serializer
-        return new DefaultKafkaProducerFactory<>(config_src0(),null , ser());
+        return new DefaultKafkaProducerFactory<>(config_src0(), null, ser());
     }
    /*
    @Bean
@@ -56,7 +55,7 @@ public class KafkaConfiguration {
     // Utilizing DelegatingByTypeSerializer instead of string serializer
     @Bean
     public ProducerFactory<Object, Object> duplicateproducerFactory() {
-        return new DefaultKafkaProducerFactory<>(config_src1() , null , new DelegatingByTypeSerializer(Map.of(userInfo.class,new JsonSerializer(),String.class,new StringSerializer())));
+        return new DefaultKafkaProducerFactory<>(config_src1(), null, new DelegatingByTypeSerializer(Map.of(userInfo.class, new JsonSerializer(), String.class, new StringSerializer())));
     }
 
     // example for using DelegatingByTopicSerializer
@@ -68,90 +67,91 @@ public class KafkaConfiguration {
 
       }
       */
-    @Bean(name="factory")
+    @Bean(name = "factory")
     @Primary
     public ProducerFactory<String, String> stringProducerFactory() {
-        return new DefaultKafkaProducerFactory<>(config_src1(),null,new ToStringSerializer<String>(){
-            public String toString()
-            {
+        return new DefaultKafkaProducerFactory<>(config_src1(), null, new ToStringSerializer<String>() {
+            public String toString() {
                 return "forced content change by serializer";
             }
         });
     }
-@Bean
-public Map<String ,Object> config_src1()
-{
-    Map<String, Object> config = new HashMap<>();
-    config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
-    config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-    config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-    config.put(ProducerConfig.CLIENT_ID_CONFIG , "stringproducer");
-    config.put(DelegatingSerializer.VALUE_SERIALIZATION_SELECTOR_CONFIG,"ser1:org.springframework.kafka.support.serializer.JsonSerializer");
-    return config;
-}
+
     @Bean
-    public Map<String ,Object> config_src0()
-    {
+    public Map<String, Object> config_src1() {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-       config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.CLIENT_ID_CONFIG , "stringproducer");
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.CLIENT_ID_CONFIG, "stringproducer");
+        config.put(DelegatingSerializer.VALUE_SERIALIZATION_SELECTOR_CONFIG, "ser1:org.springframework.kafka.support.serializer.JsonSerializer");
         return config;
     }
 
     @Bean
-    public Map<String,Object> config_src2()
-    {
+    public Map<String, Object> config_src0() {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-       // config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        config.put(ProducerConfig.CLIENT_ID_CONFIG , "jsonproducer");
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.CLIENT_ID_CONFIG, "stringproducer");
+        return config;
+    }
+
+    @Bean
+    public Map<String, Object> config_src2() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        // config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        config.put(ProducerConfig.CLIENT_ID_CONFIG, "jsonproducer");
         // disabling spring kafka json serializer type info
         // this allows me to use diff pojo in cons and producer
         // momentarily commenting exclusion of type info header as i rely on type mapping at deserializer side
         //config.put(JsonSerializer.ADD_TYPE_INFO_HEADERS , "false");
         // adding type info headers which can be leveraged by deserializers
-        config.put(JsonSerializer.TYPE_MAPPINGS,"uinfo:com.example.pojo.userInfo");
+        config.put(JsonSerializer.TYPE_MAPPINGS, "uinfo:com.example.pojo.userInfo");
         return config;
     }
 
-    @Bean(name="json")
-    public KafkaTemplate<String, userInfo> pojoKafkaTemplate(){
-return new KafkaTemplate<String,userInfo>(pojoProducerFactory());
+    @Bean(name = "json")
+    public KafkaTemplate<String, userInfo> pojoKafkaTemplate() {
+        return new KafkaTemplate<String, userInfo>(pojoProducerFactory());
     }
 
     @Bean
     public ProducerFactory<String, userInfo> pojoProducerFactory() {
-        return new DefaultKafkaProducerFactory<>(config_src2(),null,()-> new JsonSerializer());
+        return new DefaultKafkaProducerFactory<>(config_src2(), null, () -> new JsonSerializer());
     }
 
-    @Bean(name="kt")
+    @Bean(name = "kt")
     public KafkaTemplate<Object, Object> kafkaTemplate() {
-        return new KafkaTemplate<Object , Object>(producerFactory());
+        return new KafkaTemplate<Object, Object>(producerFactory());
 
     }
-    @Bean(name="duplicatekt")
+
+    @Bean(name = "duplicatekt")
     public KafkaTemplate<Object, Object> duplicatekafkaTemplate() {
-        return new KafkaTemplate<Object , Object>(duplicateproducerFactory());
+        return new KafkaTemplate<Object, Object>(duplicateproducerFactory());
 
     }
-    @Bean(name="ktstring")
+
+    @Bean(name = "ktstring")
     public KafkaTemplate<String, String> stringTemplate() {
         return new KafkaTemplate<String, String>(stringProducerFactory());
     }
-    @Bean(name="ktbyte")
+
+    @Bean(name = "ktbyte")
     @Qualifier("factory")
     public KafkaTemplate<String, byte[]> stringTemplate2(ProducerFactory<String, byte[]> pf) {
         return new KafkaTemplate<String, byte[]>(pf, Collections.singletonMap(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class));
     }
+
     @Bean
-    public RoutingKafkaTemplate routingTemplate()
-    {
-        Map<Pattern,ProducerFactory<Object,Object>> rmap= new LinkedHashMap<>();
-        rmap.put(Pattern.compile("sample-topic4"),producerFactory());
-        rmap.put(Pattern.compile("dummy"),duplicateproducerFactory());
+    public RoutingKafkaTemplate routingTemplate() {
+        Map<Pattern, ProducerFactory<Object, Object>> rmap = new LinkedHashMap<>();
+        rmap.put(Pattern.compile("sample-topic4"), producerFactory());
+        rmap.put(Pattern.compile("dummy"), duplicateproducerFactory());
         return new RoutingKafkaTemplate(rmap);
     }
 
