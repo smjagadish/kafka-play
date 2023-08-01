@@ -111,6 +111,9 @@ public class KafkaConfiguration {
         //config.put(JsonSerializer.ADD_TYPE_INFO_HEADERS , "false");
         // adding type info headers which can be leveraged by deserializers
         config.put(JsonSerializer.TYPE_MAPPINGS, "uinfo:com.example.pojo.userInfo");
+        // adding a producer interceptor
+        config.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,MyProducerInterceptor.class.getName());
+        config.put("my.bean",pBean());
         return config;
     }
 
@@ -158,5 +161,11 @@ public class KafkaConfiguration {
     @Bean
     public NewTopic sampleTopic() {
         return new NewTopic("sample-topic4", 1, (short) 1);
+    }
+
+    @Bean
+    public processBean pBean()
+    {
+        return new processBean();
     }
 }
